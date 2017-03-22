@@ -37,7 +37,8 @@ AFRAME.registerComponent('hu-question-id', {
 	schema: {type: 'array'},
 	update: function(){
 		var phrase = getDeepValue(this.el.json, this.data, '');
-		this.el.setAttribute('n-text', 'text', phrase);
+		if(this.data.length > 0 && phrase)
+			this.el.setAttribute('n-text', 'text', phrase);
 	}
 });
 
