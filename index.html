@@ -31,7 +31,7 @@
 					scale='0.6 0.1 0.1'>
 				</a-mixin>
 
-				<a-mixin id='text'
+				<a-mixin id='ui-text'
 					n-text='font-size: 1; width: 1; height: 0.5'>
 				</a-mixin>
 
@@ -48,19 +48,19 @@
 
 			<a-entity id='text' mixin='head-text'></a-entity>
 
-			<a-entity id='accepted' mixin='ui-on-spine bubble bottom'
+			<a-entity mixin='ui-on-spine bubble bottom'
 				hu-next-question='target: #text'>
 			</a-entity>
-			<a-entity mixin='ui-on-spine text bottom'
+			<a-entity mixin='ui-on-spine ui-text bottom'
 				n-text='text: Got it!'>
 			</a-entity>
 
-			<a-entity id='rejected' mixin='ui-on-spine bubble top'
+			<a-entity mixin='ui-on-spine bubble top'
 				hu-next-question='target: #text'>
 			</a-entity>
-			<a-entity mixin='ui-on-spine text top'
-				n-text='text: <color=#bbbbbb>Skip'
-			></a-entity>
+			<a-entity mixin='ui-on-spine ui-text top'
+				n-text='text: <color=#bbbbbb>Skip'>
+			</a-entity>
 
 		</a-scene>
 	</body>
