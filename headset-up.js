@@ -1,13 +1,13 @@
 'use strict';
 
-function getDeepValue(obj, pathsArray, defaultValue)
+function getDeepValue(obj, pathArray, defaultValue)
 {
-	if(pathsArray.length == 0)
+	if(pathArray.length == 0)
 		return obj;
-	else if(!(obj instanceof Object) || obj[pathsArray[0]] === undefined)
+	else if(!(obj instanceof Object) || obj[pathArray[0]] === undefined)
 		return defaultValue;
 	else
-		return getDeepValue(obj[pathsArray[0]], pathsArray.slice(1), defaultValue);
+		return getDeepValue(obj[pathArray[0]], pathArray.slice(1), defaultValue);
 }
 
 function parseCategories(cats)
@@ -48,11 +48,26 @@ AFRAME.registerComponent('hu-next-question', {
 	},
 	init: function()
 	{
+		function sum(acc, val){
+			return acc + val;
+		}
+
 		var catString = this.el.sceneEl.dataset.categories;
-		this.catNames = parseCategories(catString);
-		this.catLengths = this.catNames.map(function(name){
-			return getDeepValue(this.data.target.json, name, []).length;
-		}, this);
+		this.catPaths = parseCategories(catString);
+
+		// pretend the categories are all in one long array
+		// this array stores the first index of each category in that array
+		this.catOffsets =
+			this.catPaths
+			.map(function(name){
+				return getDeepValue(this.data.target.json, name, []).length;
+			}, this)
+			.map(function(length, i, array){
+				return array.slice(0, i+1).reduce(sum, 0);
+			});
+
+		// the first item in the offsets list is always zero
+		this.catOffsets.unshift(0);
 
 		this.advanceQuestion = this._advanceQuestion.bind(this);
 		this.el.addEventListener(this.data.on, this.advanceQuestion);
@@ -62,27 +77,19 @@ AFRAME.registerComponent('hu-next-question', {
 	},
 	_advanceQuestion: function()
 	{
-		function sum(acc, val){
-			return acc + val;
-		}
-
-		var totalLength = this.catLengths.reduce(sum, 0);
-		var newQIndex = Math.floor( Math.random() * totalLength );
+		var totalLength = this.catOffsets[this.catOffsets.length-1];
+		var newQTotalIndex = Math.floor( Math.random() * totalLength );
 
 		// find the category that the randomly chosen index falls in
-		var catIndex = this.catLengths.findIndex( function(el, i, array){
-			return newQIndex >= array.slice(0, i).reduce(sum, 0)
-				&& newQIndex < array.slice(0, i+1).reduce(sum, 0);
+		var catIndex = this.catOffsets.findIndex( function(el, i, array){
+			return newQTotalIndex >= el && newQTotalIndex < array[i+1];
 		});
 
-		// create a copy of the category name
-		var newQName = this.catNames[catIndex].slice();
-
-		// compute index of the random item in that category
-		var newQCatOffset = this.catLengths.slice(0, catIndex).reduce(sum, 0);
-		newQName.push( newQIndex - newQCatOffset );
+		// create a copy of the category path
+		var newQPath = this.catPaths[catIndex].slice();
+		newQPath.push( newQTotalIndex - this.catOffsets[catIndex] );
 
 		// update the question id with the new name
-		this.data.target.setAttribute('hu-question-id', newQName);
+		this.data.target.setAttribute('hu-question-id', newQPath);
 	}
 });
