@@ -2,12 +2,20 @@
 <html>
 	<head>
 		<title>Headset Up!</title>
-		<script src='https://aframe.io/releases/v0.3.0/aframe.min.js'></script>
+		<script src='https://aframe.io/releases/0.3.0/aframe.min.js'></script>
 		<script src='https://sdk.altvr.com/libs/altspace.js/2.0.3/altspace.min.js'></script>
+		<script src='headset-up.js'></script>
 	</head>
 	<body>
 		<a-scene altspace='fullspace: true'>
-			
+			<a-assets>
+				<a-asset-item id='dict' src='game_words.json'></a-asset-item>
+			</a-assets>
+			<a-entity position='0 0.2 -0.2' rotation='0 180 0'
+				n-text='text: Heads(et) Up!; font-size: 1; width: 1; height: 0.5;'
+				json='#dict'
+				hu-question-id='catchphrase,easy,0'
+				n-skeleton-parent='part: head'></a-entity>
 		</a-scene>
 	</body>
 </html>
