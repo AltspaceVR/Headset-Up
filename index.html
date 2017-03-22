@@ -7,15 +7,41 @@
 		<script src='headset-up.js'></script>
 	</head>
 	<body>
-		<a-scene altspace='fullspace: true'>
+		<a-scene altspace='fullspace: true'
+			data-categories='catchphrase.easy; catchphrase.medium; catchphrase.hard'>
+
 			<a-assets>
 				<a-asset-item id='dict' src='game_words.json'></a-asset-item>
 			</a-assets>
-			<a-entity position='0 0.2 -0.2' rotation='0 180 0'
-				n-text='text: Heads(et) Up!; font-size: 1; width: 1; height: 0.5;'
-				json='#dict'
-				hu-question-id='catchphrase,easy,0'
-				n-skeleton-parent='part: head'></a-entity>
+
+			<a-entity id='text' position='0 0.2 -0.2' rotation='0 180 0'
+				n-text='text: Headset Up!; font-size: 1; width: 1; height: 0.5;'
+				json='#dict' hu-question-id='catchphrase,easy,0'
+				n-skeleton-parent='part: head'>
+			</a-entity>
+
+			<a-sphere id='accepted' position='0 0 -0.7'
+				radius='0.5' scale='1 0.1 0.1'
+				color='#008000' side='back'
+				n-skeleton-parent='part: spine' altspace-cursor-collider='enabled: true'
+				hu-next-question='target: #text'>
+			</a-sphere>
+			<a-entity id='acceptedLabel' position='0 0 -0.7'
+				n-text='text: Got it!; font-size: 1; width: 1; height: 0.5'
+				n-skeleton-parent='part: spine'>
+			</a-entity>
+
+			<a-sphere id='rejected' position='0 1 -0.7'
+				radius='0.5' scale='1 0.1 0.1'
+				color='#800000' side='back'
+				n-skeleton-parent='part: spine' altspace-cursor-collider='enabled: true'
+				hu-next-question='target: #text'>
+			</a-sphere>
+			<a-entity id='rejectedLabel' position='0 1 -0.7'
+				n-text='text: Skip; font-size: 1; width: 1; height: 0.5'
+				n-skeleton-parent='part: spine'>
+			</a-entity>
+
 		</a-scene>
 	</body>
 </html>
