@@ -3,11 +3,12 @@
 	<head>
 		<title>Headset Up!</title>
 		<script src='https://aframe.io/releases/0.3.0/aframe.min.js'></script>
-		<script src='https://sdk.altvr.com/libs/altspace.js/2.0.3/altspace.min.js'></script>
+		<script src='https://sdk.altvr.com/libs/altspace.js/2.0.3/altspace.js'></script>
 		<script src='headset-up.js'></script>
 	</head>
 	<body>
 		<a-scene altspace='fullspace: true'
+			sync-system='app: headset-up; author: altspacevr'
 			data-categories='catchphrase.easy; catchphrase.medium; catchphrase.hard'>
 
 			<a-assets>
@@ -16,8 +17,9 @@
 				<a-mixin id='head-text'
 					position='0 0.2 -0.2' rotation='0 180 0'
 					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.5;'
-					json='#dict' hu-question-id=''
-					n-skeleton-parent='part: head'>
+					json='#dict' hud-question-id=''
+					n-skeleton-parent='part: head'
+					sync sync-n-skeleton-parent>
 				</a-mixin>
 
 				<a-mixin id='ui-on-spine'
@@ -28,7 +30,8 @@
 				<a-mixin id='bubble'
 					geometry='primitive: sphere; radius: 0.5'
 					material='shader: flat; side: back'
-					scale='0.6 0.1 0.1'>
+					scale='0.6 0.1 0.1'
+					hud-next-question>
 				</a-mixin>
 
 				<a-mixin id='ui-text'
@@ -44,22 +47,33 @@
 					material='color: #0eb8f6'>
 				</a-mixin>
 
+				<a-mixin id='top-text'
+					n-text='text: <color=#bbbbbb>Skip'>
+				</a-mixin>
+				<a-mixin id='bottom-text'
+					n-text='text: Got it!'>
+				</a-mixin>
+
 			</a-assets>
 
-			<a-entity id='text' mixin='head-text'></a-entity>
+			<a-box wire='on: click; emit: attach-hud; targets: .hud'></a-box>
 
-			<a-entity mixin='ui-on-spine bubble bottom'
-				hu-next-question='target: #text'>
-			</a-entity>
-			<a-entity mixin='ui-on-spine ui-text bottom'
-				n-text='text: Got it!'>
+			<a-entity id='text' class='hud'
+				instantiator='mixin: head-text; on: attach-hud; remove-last: true'>
 			</a-entity>
 
-			<a-entity mixin='ui-on-spine bubble top'
-				hu-next-question='target: #text'>
+			<a-entity class='hud'
+				mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom'>
 			</a-entity>
-			<a-entity mixin='ui-on-spine ui-text top'
-				n-text='text: <color=#bbbbbb>Skip'>
+			<a-entity class='hud'
+				mixin-on='on: attach-hud; mixins: ui-on-spine, ui-text, bottom, bottom-text'>
+			</a-entity>
+
+			<a-entity class='hud'
+				mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, top'>
+			</a-entity>
+			<a-entity class='hud'
+				mixin-on='on: attach-hud; mixins: ui-on-spine, ui-text, top, top-text'>
 			</a-entity>
 
 		</a-scene>
