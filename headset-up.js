@@ -46,21 +46,33 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-AFRAME.registerComponent('mixin-on', {
+AFRAME.registerComponent('clone-on', {
 	schema: {
 		on: {type: 'string'},
-		mixins: {type: 'array'}
+		mixins: {type: 'array', default: []}
 	},
 	init: function(){
 		var self = this;
-		this.el.addEventListener(this.data.on, function(){
-			self.el.setAttribute('mixin', self.data.mixins.join(' '));
+		this.el.addEventListener(this.data.on, function()
+		{
+			if(!self.clone){
+				self.clone = document.createElement('a-entity');
+				self.clone.setAttribute('class', self.el.className);
+				self.clone.classList.add('clone');
+				self.clone.setAttribute('mixin', self.data.mixins.join(' '));
+				self.el.parentNode.appendChild(self.clone);
+			}
+			else {
+				self.clone.parentElement.remove(self.clone);
+				self.clone = null;
+			}
 		});
 	}
 });
 
 AFRAME.registerComponent('timer', {
 	multiple: true,
+	dependencies: ['sync'],
 	schema: {
 		duration: {type: 'number', default: 30},
 		on: {type: 'string', default: null},
@@ -68,62 +80,130 @@ AFRAME.registerComponent('timer', {
 		label: {type: 'selector', default: null},
 		autostart: {type: 'boolean', default: false}
 	},
-	init: function(){
-		this.running = this.data.autostart;
+	init: function()
+	{
 		this.endTime = 0;
 		this.lastUpdate = 0;
 
 		if(this.data.on){
-			this.el.addEventListener(this.data.on, this.restart.bind(this));
+			this.el.addEventListener(this.data.on, this.start.bind(this));
+		}
+
+		this.sync = this.el.components.sync;
+		if(this.sync.isConnected){
+			this.syncStart();
+		}
+		else {
+			this.el.addEventListener('connected', this.syncStart.bind(this));
 		}
 	},
 	tick: function(time, deltaTime)
 	{
-		if(!this.running) return;
-
-		if(!this.endTime){
-			this.endTime = time + this.data.duration * 1000;
-			this.lastUpdate = time;
-		}
+		if(!this.endTime) return;
 
 		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
-		if(label && time - this.lastUpdate > 1000){
-			label.setAttribute('n-text', 'text', formatTime(this.endTime - time));
-			this.lastUpdate = time;
+		var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
+
+		if(label && nowTime - this.lastUpdate > 250){
+			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
+			this.lastUpdate = nowTime;
 		}
 
-		if(time > this.endTime){
+		if(this.endTime > 0 && nowTime > this.endTime){
 			this.el.emit(this.data.emit);
 			this.stop();
 			if(label)
 				label.setAttribute('n-text', 'text', '00:00');
 		}
 	},
-	restart: function(){
-		this.running = true;
-		this.endTime = 0;
-	},
 	start: function(){
-		this.running = true;
+		if(this.sync.isMine && this.startTimeRef){
+			this.startTimeRef.set(Firebase.ServerValue.TIMESTAMP);
+		}
 	},
 	stop: function(){
-		this.running = false;
-		this.endTime = 0;
+		if(this.sync.isMine && this.startTimeRef){
+			this.startTimeRef.set(0);
+		}
+	},
+	syncStart: function()
+	{
+		this.startTimeRef = this.sync.dataRef.child(this.name);
+
+		/*this.dataRef.on('value', (function(snapshot){
+			if(!this.sync.isMine || !this.data.length){
+				var val = snapshot.val();
+			}
+		}).bind(this));*/
+
+		this.startTimeRef.on('value', (function(snapshot)
+		{
+			var serverTime = snapshot.val();
+
+			if(serverTime > 0){
+				this.localTimeOffset = Date.now() - serverTime;
+				this.endTime = serverTime + Math.floor(this.data.duration * 1000);
+			}
+			else {
+				this.endTime = 0;
+			}
+
+		}).bind(this));
+
+		if(this.data.autostart)
+			this.start();
+	},
+	running: function(){
+		return this.endTime !== 0;
 	}
 });
 
 AFRAME.registerComponent('hud-question-id', {
-	dependencies: ['json', 'n-text'],
+	dependencies: ['json', 'n-text', 'sync'],
 	schema: {type: 'array'},
-	update: function(){
+	init: function()
+	{
+		this.sync = this.el.components.sync;
+		if(this.sync.isConnected){
+			this.start();
+		}
+		else {
+			this.el.addEventListener('connected', this.start.bind(this));
+		}
+
+		this.el.addEventListener('timerend', (function(){
+			this.el.setAttribute(this.name, []);
+		}).bind(this));
+	},
+	update: function()
+	{
 		var phrase = getDeepValue(this.el.json, this.data, '');
 		if(this.data.length > 0 && phrase){
 			this.el.setAttribute('n-text', 'text', phrase);
-
-			var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
-			var target = document.querySelector('[timer][data-creator-user-id="'+userId+'"]');
-			target.components.timer.start();
 		}
+		else {
+			this.el.setAttribute('n-text', 'text', 'Ready to play?');
+		}
+
+		if(this.sync.isMine)
+		{
+			if(this.dataRef){
+				this.dataRef.set(this.data);
+			}
+
+			var target = document.querySelector('.mine[timer]');
+			if(!target.components.timer.running())
+				target.components.timer.start();
+		}
+	},
+	start: function()
+	{
+		this.dataRef = this.sync.dataRef.child(this.name);
+		this.dataRef.on('value', (function(snapshot){
+			if(!this.sync.isMine || !this.data.length){
+				this.el.setAttribute(this.name, snapshot.val());
+			}
+		}).bind(this));
 	}
 });
 

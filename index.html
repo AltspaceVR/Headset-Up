@@ -3,11 +3,11 @@
 	<head>
 		<title>Headset Up!</title>
 		<script src='https://aframe.io/releases/0.3.0/aframe.min.js'></script>
-		<script src='https://sdk.altvr.com/libs/altspace.js/2.0.3/altspace.js'></script>
+		<script src='https://cdn.rawgit.com/AltspaceVR/AltspaceSDK/d1a5ec4c60083a8a55b66d39302352521b7652d6/dist/altspace.js'></script>
 		<script src='headset-up.js'></script>
 	</head>
 	<body>
-		<a-scene altspace='fullspace: true'
+		<a-scene altspace='fullspace: true' debug
 			sync-system='app: headset-up; author: altspacevr'
 			data-categories='catchphrase.easy; catchphrase.medium; catchphrase.hard'>
 
@@ -27,7 +27,8 @@
 					n-text='text: 1:00; font-size: 1; width: 1; height: 0.1'
 					timer='duration: 60'
 					n-skeleton-parent='part: eye'
-					sync sync-n-skeleton-parent>
+					sync sync-n-skeleton-parent
+					wire='on: timerend; emit: timerend; targets: .mine[hud-question-id]'>
 				</a-mixin>
 
 				<a-mixin id='ui-on-spine'
@@ -72,20 +73,20 @@
 			</a-entity>
 
 			<a-entity position='0 0 -0.7'>
-				<a-entity class='hud'
-					mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom-bubble'>
+				<a-entity class='hud bubble'
+					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom-bubble'>
 				</a-entity>
-				<a-entity class='hud'
-					mixin-on='on: attach-hud; mixins: ui-on-spine, text, bottom-text'>
+				<a-entity class='hud text'
+					clone-on='on: attach-hud; mixins: ui-on-spine, text, bottom-text'>
 				</a-entity>
 			</a-entity>
 
 			<a-entity position='0 1 -0.7'>
-				<a-entity class='hud'
-					mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, top-bubble'>
+				<a-entity class='hud bubble'
+					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, top-bubble'>
 				</a-entity>
-				<a-entity class='hud'
-					mixin-on='on: attach-hud; mixins: ui-on-spine, text, top-text'>
+				<a-entity class='hud text'
+					clone-on='on: attach-hud; mixins: ui-on-spine, text, top-text'>
 				</a-entity>
 			</a-entity>
 
