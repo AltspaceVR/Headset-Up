@@ -15,10 +15,18 @@
 				<a-asset-item id='dict' src='game_words.json'></a-asset-item>
 
 				<a-mixin id='head-text'
-					position='0 0.2 -0.2' rotation='0 180 0'
-					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.5;'
+					position='0 0.15 0' rotation='0 180 0'
+					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.1;'
 					json='#dict' hud-question-id=''
-					n-skeleton-parent='part: head'
+					n-skeleton-parent='part: eye'
+					sync sync-n-skeleton-parent>
+				</a-mixin>
+
+				<a-mixin id='head-timer'
+					position='0 0.25 0' rotation='0 180 0'
+					n-text='text: 1:00; font-size: 1; width: 1; height: 0.1'
+					timer='duration: 60'
+					n-skeleton-parent='part: eye'
 					sync sync-n-skeleton-parent>
 				</a-mixin>
 
@@ -34,16 +42,14 @@
 					hud-next-question>
 				</a-mixin>
 
-				<a-mixin id='ui-text'
+				<a-mixin id='text'
 					n-text='font-size: 1; width: 1; height: 0.5'>
 				</a-mixin>
 
-				<a-mixin id='top'
-					position='0 1 -0.7'
+				<a-mixin id='top-bubble'
 					material='color: #eeeeee'>
 				</a-mixin>
-				<a-mixin id='bottom'
-					position='0 0 -0.7'
+				<a-mixin id='bottom-bubble'
 					material='color: #0eb8f6'>
 				</a-mixin>
 
@@ -58,22 +64,29 @@
 
 			<a-box wire='on: click; emit: attach-hud; targets: .hud'></a-box>
 
-			<a-entity id='text' class='hud'
-				instantiator='mixin: head-text; on: attach-hud; remove-last: true'>
+			<a-entity class='hud'
+				instantiator='mixin: head-text; on: attach-hud; group: text; remove-last: true'>
+			</a-entity>
+			<a-entity class='hud'
+				instantiator='mixin: head-timer; on: attach-hud; group: timer; remove-last: true'>
 			</a-entity>
 
-			<a-entity class='hud'
-				mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom'>
-			</a-entity>
-			<a-entity class='hud'
-				mixin-on='on: attach-hud; mixins: ui-on-spine, ui-text, bottom, bottom-text'>
+			<a-entity position='0 0 -0.7'>
+				<a-entity class='hud'
+					mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom-bubble'>
+				</a-entity>
+				<a-entity class='hud'
+					mixin-on='on: attach-hud; mixins: ui-on-spine, text, bottom-text'>
+				</a-entity>
 			</a-entity>
 
-			<a-entity class='hud'
-				mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, top'>
-			</a-entity>
-			<a-entity class='hud'
-				mixin-on='on: attach-hud; mixins: ui-on-spine, ui-text, top, top-text'>
+			<a-entity position='0 1 -0.7'>
+				<a-entity class='hud'
+					mixin-on='on: attach-hud; mixins: ui-on-spine, bubble, top-bubble'>
+				</a-entity>
+				<a-entity class='hud'
+					mixin-on='on: attach-hud; mixins: ui-on-spine, text, top-text'>
+				</a-entity>
 			</a-entity>
 
 		</a-scene>

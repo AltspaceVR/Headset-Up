@@ -17,6 +17,20 @@ function parseCategories(cats)
 	});
 }
 
+function formatTime(ms)
+{
+	if(ms <= 0)
+		return '00:00';
+
+	var minutes = Math.floor(ms/60000);
+	if(minutes < 10) minutes = '0'+minutes;
+
+	var seconds = Math.ceil(ms/1000) % 60;
+	if(seconds < 10) seconds = '0'+seconds;
+
+	return minutes + ':' + seconds;
+}
+
 AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
 	init: function(){
@@ -45,13 +59,71 @@ AFRAME.registerComponent('mixin-on', {
 	}
 });
 
+AFRAME.registerComponent('timer', {
+	multiple: true,
+	schema: {
+		duration: {type: 'number', default: 30},
+		on: {type: 'string', default: null},
+		emit: {type: 'string', default: 'timerend'},
+		label: {type: 'selector', default: null},
+		autostart: {type: 'boolean', default: false}
+	},
+	init: function(){
+		this.running = this.data.autostart;
+		this.endTime = 0;
+		this.lastUpdate = 0;
+
+		if(this.data.on){
+			this.el.addEventListener(this.data.on, this.restart.bind(this));
+		}
+	},
+	tick: function(time, deltaTime)
+	{
+		if(!this.running) return;
+
+		if(!this.endTime){
+			this.endTime = time + this.data.duration * 1000;
+			this.lastUpdate = time;
+		}
+
+		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
+		if(label && time - this.lastUpdate > 1000){
+			label.setAttribute('n-text', 'text', formatTime(this.endTime - time));
+			this.lastUpdate = time;
+		}
+
+		if(time > this.endTime){
+			this.el.emit(this.data.emit);
+			this.stop();
+			if(label)
+				label.setAttribute('n-text', 'text', '00:00');
+		}
+	},
+	restart: function(){
+		this.running = true;
+		this.endTime = 0;
+	},
+	start: function(){
+		this.running = true;
+	},
+	stop: function(){
+		this.running = false;
+		this.endTime = 0;
+	}
+});
+
 AFRAME.registerComponent('hud-question-id', {
 	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	update: function(){
 		var phrase = getDeepValue(this.el.json, this.data, '');
-		if(this.data.length > 0 && phrase)
+		if(this.data.length > 0 && phrase){
 			this.el.setAttribute('n-text', 'text', phrase);
+
+			var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
+			var target = document.querySelector('[timer][data-creator-user-id="'+userId+'"]');
+			target.components.timer.start();
+		}
 	}
 });
 
@@ -71,7 +143,7 @@ AFRAME.registerComponent('hud-next-question', {
 		}
 
 		var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
-		this.target = document.querySelector('[data-creator-user-id="'+userId+'"]');
+		this.target = document.querySelector('[hud-question-id][data-creator-user-id="'+userId+'"]');
 		var catString = this.el.sceneEl.dataset.categories;
 		this.catPaths = parseCategories(catString);
 
