@@ -1,0 +1,133 @@
+diff -u checkpoint-1/headset-up.js checkpoint-2/headset-up.js
+--- checkpoint-1/headset-up.js	2017-03-24 13:14:33.852318800 -0700
++++ checkpoint-2/headset-up.js	2017-03-24 13:11:53.853600000 -0700
+@@ -46,3 +46,62 @@
+ 		}
+ 	}
+ });
++
++AFRAME.registerComponent('hud-next-question', {
++	schema: {
++		on: {type: 'string', default: 'click'}
++	},
++	init: function()
++	{
++		this.advanceQuestion = this._advanceQuestion.bind(this);
++		this.el.addEventListener(this.data.on, this.advanceQuestion);
++	},
++	initCategories: function()
++	{
++		function sum(acc, val){
++			return acc + val;
++		}
++
++		this.target = document.querySelector('.hud[json][hud-question-id]');
++		var catString = this.el.sceneEl.dataset.categories;
++		this.catPaths = parseCategories(catString);
++
++		// pretend the categories are all in one long array
++		// this array stores the first index of each category in that array
++		this.catOffsets =
++			this.catPaths
++			.map(function(name){
++				return getDeepValue(this.target.json, name, []).length;
++			}, this)
++			.map(function(length, i, array){
++				return array.slice(0, i+1).reduce(sum, 0);
++			});
++
++		// the first item in the offsets list is always zero
++		this.catOffsets.unshift(0);
++	},
++	remove: function(){
++		this.el.removeEventListener(this.data.on, this.advanceQuestion);
++	},
++	_advanceQuestion: function()
++	{
++		if(!this.target || !this.catPaths || !this.catOffsets){
++			this.initCategories();
++		}
++
++		var totalLength = this.catOffsets[this.catOffsets.length-1];
++		var newQTotalIndex = Math.floor( Math.random() * totalLength );
++
++		// find the category that the randomly chosen index falls in
++		var catIndex = this.catOffsets.findIndex( function(el, i, array){
++			return newQTotalIndex >= el && newQTotalIndex < array[i+1];
++		});
++
++		// create a copy of the category path
++		var newQPath = this.catPaths[catIndex].slice();
++		newQPath.push( newQTotalIndex - this.catOffsets[catIndex] );
++
++		// update the question id with the new name
++		this.target.setAttribute('hud-question-id', newQPath);
++	}
++});
+diff -u checkpoint-1/index.html checkpoint-2/index.html
+--- checkpoint-1/index.html	2017-03-24 13:10:56.056902700 -0700
++++ checkpoint-2/index.html	2017-03-24 13:10:48.757532400 -0700
+@@ -16,14 +16,62 @@
+ 				<a-mixin id='head-text'
+ 					position='0 0.15 0' rotation='0 180 0'
+ 					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.1;'
+-					json='#dict' hud-question-id='catchphrase,medium,20'
++					json='#dict' hud-question-id=''
+ 					n-skeleton-parent='part: eye'>
+ 				</a-mixin>
+ 
++				<a-mixin id='ui-on-spine'
++					n-skeleton-parent='part: spine'
++					altspace-cursor-collider='enabled: true'>
++				</a-mixin>
++
++				<a-mixin id='bubble'
++					geometry='primitive: sphere; radius: 0.5'
++					material='shader: flat; side: back'
++					scale='0.6 0.1 0.1'
++					hud-next-question>
++				</a-mixin>
++
++				<a-mixin id='text'
++					n-text='font-size: 1; width: 1; height: 0.5'>
++				</a-mixin>
++
++				<a-mixin id='top-bubble'
++					material='color: #eeeeee'>
++				</a-mixin>
++				<a-mixin id='bottom-bubble'
++					material='color: #0eb8f6'>
++				</a-mixin>
++
++				<a-mixin id='top-text'
++					n-text='text: <color=#bbbbbb>Skip'>
++				</a-mixin>
++				<a-mixin id='bottom-text'
++					n-text='text: Got it!'>
++				</a-mixin>
++
+ 			</a-assets>
+ 
+ 			<a-entity class='hud' mixin='head-text'></a-entity>
+ 
++			<a-entity position='0 0 -0.7'>
++				<a-entity class='hud bubble'
++					mixin='ui-on-spine bubble bottom-bubble'>
++				</a-entity>
++				<a-entity class='hud text'
++					mixin='ui-on-spine text bottom-text'>
++				</a-entity>
++			</a-entity>
++
++			<a-entity position='0 1 -0.7'>
++				<a-entity class='hud bubble'
++					mixin='ui-on-spine bubble top-bubble'>
++				</a-entity>
++				<a-entity class='hud text'
++					mixin='ui-on-spine text top-text'>
++				</a-entity>
++			</a-entity>
++
+ 		</a-scene>
+ 	</body>
+ </html>

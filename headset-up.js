@@ -129,13 +129,6 @@ AFRAME.registerComponent('timer', {
 	syncStart: function()
 	{
 		this.startTimeRef = this.sync.dataRef.child(this.name);
-
-		/*this.dataRef.on('value', (function(snapshot){
-			if(!this.sync.isMine || !this.data.length){
-				var val = snapshot.val();
-			}
-		}).bind(this));*/
-
 		this.startTimeRef.on('value', (function(snapshot)
 		{
 			var serverTime = snapshot.val();

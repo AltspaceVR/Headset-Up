@@ -1,0 +1,126 @@
+diff -u checkpoint-2/headset-up.js checkpoint-3/headset-up.js
+--- checkpoint-2/headset-up.js	2017-03-24 13:11:53.853600000 -0700
++++ checkpoint-3/headset-up.js	2017-03-24 13:26:56.209995800 -0700
+@@ -17,6 +17,20 @@
+ 	});
+ }
+ 
++function formatTime(ms)
++{
++	if(ms <= 0)
++		return '00:00';
++
++	var minutes = Math.floor(ms/60000);
++	if(minutes < 10) minutes = '0'+minutes;
++
++	var seconds = Math.ceil(ms/1000) % 60;
++	if(seconds < 10) seconds = '0'+seconds;
++
++	return minutes + ':' + seconds;
++}
++
+ AFRAME.registerComponent('json', {
+ 	schema: {type: 'src'},
+ 	init: function(){
+@@ -32,14 +46,74 @@
+ 	}
+ });
+ 
++AFRAME.registerComponent('timer', {
++	multiple: true,
++	schema: {
++		duration: {type: 'number', default: 30},
++		on: {type: 'string', default: null},
++		emit: {type: 'string', default: 'timerend'},
++		label: {type: 'selector', default: null},
++		autostart: {type: 'boolean', default: false}
++	},
++	init: function()
++	{
++		this.endTime = 0;
++		this.lastUpdate = 0;
++
++		if(this.data.on){
++			this.el.addEventListener(this.data.on, this.start.bind(this));
++		}
++
++		if(this.data.autostart)
++			this.start();
++	},
++	tick: function(time, deltaTime)
++	{
++		if(!this.endTime) return;
++
++		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
++		var nowTime = performance.now();
++
++		if(label && nowTime - this.lastUpdate > 250){
++			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
++			this.lastUpdate = nowTime;
++		}
++
++		if(this.endTime > 0 && nowTime > this.endTime){
++			this.el.emit(this.data.emit);
++			this.stop();
++			if(label)
++				label.setAttribute('n-text', 'text', '00:00');
++		}
++	},
++	start: function(){
++		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
++	},
++	stop: function(){
++		this.endTime = 0;
++	},
++	running: function(){
++		return this.endTime !== 0;
++	}
++});
++
+ AFRAME.registerComponent('hud-question-id', {
+ 	dependencies: ['json', 'n-text'],
+ 	schema: {type: 'array'},
++	init: function()
++	{
++		this.el.addEventListener('timerend', (function(){
++			this.el.setAttribute(this.name, []);
++		}).bind(this));
++	},
+ 	update: function()
+ 	{
+ 		var phrase = getDeepValue(this.el.json, this.data, '');
+ 		if(this.data.length > 0 && phrase){
+ 			this.el.setAttribute('n-text', 'text', phrase);
++			var target = document.querySelector('.hud[timer]');
++			if(!target.components.timer.running())
++				target.components.timer.start();
+ 		}
+ 		else {
+ 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
+diff -u checkpoint-2/index.html checkpoint-3/index.html
+--- checkpoint-2/index.html	2017-03-24 13:10:48.757532400 -0700
++++ checkpoint-3/index.html	2017-03-24 13:19:57.733086400 -0700
+@@ -20,6 +20,15 @@
+ 					n-skeleton-parent='part: eye'>
+ 				</a-mixin>
+ 
++				<a-mixin id='head-timer'
++					position='0 0.25 0' rotation='0 180 0'
++					n-text='text: 1:00; font-size: 1; width: 1; height: 0.1'
++					timer='duration: 60'
++					n-skeleton-parent='part: eye'
++					sync sync-n-skeleton-parent
++					wire='on: timerend; emit: timerend; targets: [hud-question-id]'>
++				</a-mixin>
++
+ 				<a-mixin id='ui-on-spine'
+ 					n-skeleton-parent='part: spine'
+ 					altspace-cursor-collider='enabled: true'>
+@@ -53,6 +62,7 @@
+ 			</a-assets>
+ 
+ 			<a-entity class='hud' mixin='head-text'></a-entity>
++			<a-entity class='hud' mixin='head-timer'></a-entity>
+ 
+ 			<a-entity position='0 0 -0.7'>
+ 				<a-entity class='hud bubble'
