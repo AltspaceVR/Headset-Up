@@ -1,6 +1,6 @@
 diff -u checkpoint-2/headset-up.js checkpoint-3/headset-up.js
 --- checkpoint-2/headset-up.js	2017-03-24 13:11:53.853600000 -0700
-+++ checkpoint-3/headset-up.js	2017-03-24 13:26:56.209995800 -0700
++++ checkpoint-3/headset-up.js	2017-03-24 14:16:05.569031500 -0700
 @@ -17,6 +17,20 @@
  	});
  }
@@ -10,10 +10,10 @@ diff -u checkpoint-2/headset-up.js checkpoint-3/headset-up.js
 +	if(ms <= 0)
 +		return '00:00';
 +
-+	var minutes = Math.floor(ms/60000);
++	var seconds = Math.ceil(ms/1000);
++	var minutes = Math.floor(seconds / 60);
++	seconds = seconds % 60;
 +	if(minutes < 10) minutes = '0'+minutes;
-+
-+	var seconds = Math.ceil(ms/1000) % 60;
 +	if(seconds < 10) seconds = '0'+seconds;
 +
 +	return minutes + ':' + seconds;

@@ -22,10 +22,10 @@ function formatTime(ms)
 	if(ms <= 0)
 		return '00:00';
 
-	var minutes = Math.floor(ms/60000);
+	var seconds = Math.ceil(ms/1000);
+	var minutes = Math.floor(seconds / 60);
+	seconds = seconds % 60;
 	if(minutes < 10) minutes = '0'+minutes;
-
-	var seconds = Math.ceil(ms/1000) % 60;
 	if(seconds < 10) seconds = '0'+seconds;
 
 	return minutes + ':' + seconds;
