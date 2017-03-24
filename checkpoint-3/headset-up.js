@@ -97,7 +97,7 @@ AFRAME.registerComponent('timer', {
 	}
 });
 
-AFRAME.registerComponent('hud-question-id', {
+AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	init: function()
@@ -121,7 +121,7 @@ AFRAME.registerComponent('hud-question-id', {
 	}
 });
 
-AFRAME.registerComponent('hud-next-question', {
+AFRAME.registerComponent('advance-phrase', {
 	schema: {
 		on: {type: 'string', default: 'click'}
 	},
@@ -136,7 +136,7 @@ AFRAME.registerComponent('hud-next-question', {
 			return acc + val;
 		}
 
-		this.target = document.querySelector('.hud[json][hud-question-id]');
+		this.target = document.querySelector('.hud[json][display-phrase]');
 		var catString = this.el.sceneEl.dataset.categories;
 		this.catPaths = parseCategories(catString);
 
@@ -176,6 +176,6 @@ AFRAME.registerComponent('hud-next-question', {
 		newQPath.push( newQTotalIndex - this.catOffsets[catIndex] );
 
 		// update the question id with the new name
-		this.target.setAttribute('hud-question-id', newQPath);
+		this.target.setAttribute('display-phrase', newQPath);
 	}
 });

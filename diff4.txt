@@ -1,229 +1,158 @@
-diff -u checkpoint-3/headset-up.js checkpoint-4/headset-up.js
---- checkpoint-3/headset-up.js	2017-03-24 13:26:56.209995800 -0700
-+++ checkpoint-4/headset-up.js	2017-03-24 13:55:36.343222500 -0700
-@@ -46,8 +46,33 @@
- 	}
- });
- 
-+AFRAME.registerComponent('clone-on', {
-+	schema: {
-+		on: {type: 'string'},
-+		mixins: {type: 'array', default: []}
-+	},
-+	init: function(){
-+		var self = this;
-+		this.el.addEventListener(this.data.on, function()
-+		{
-+			if(!self.clone){
-+				self.clone = document.createElement('a-entity');
-+				self.clone.setAttribute('class', self.el.className);
-+				self.clone.classList.add('clone');
-+				self.clone.setAttribute('mixin', self.data.mixins.join(' '));
-+				self.el.parentNode.appendChild(self.clone);
-+			}
-+			else {
-+				self.clone.parentElement.remove(self.clone);
-+				self.clone = null;
-+			}
-+		});
-+	}
-+});
-+
- AFRAME.registerComponent('timer', {
- 	multiple: true,
-+	dependencies: ['sync'],
- 	schema: {
- 		duration: {type: 'number', default: 30},
- 		on: {type: 'string', default: null},
-@@ -64,15 +89,20 @@
- 			this.el.addEventListener(this.data.on, this.start.bind(this));
- 		}
- 
--		if(this.data.autostart)
--			this.start();
-+		this.sync = this.el.components.sync;
-+		if(this.sync.isConnected){
-+			this.syncStart();
-+		}
-+		else {
-+			this.el.addEventListener('connected', this.syncStart.bind(this));
-+		}
- 	},
- 	tick: function(time, deltaTime)
- 	{
- 		if(!this.endTime) return;
- 
- 		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
--		var nowTime = performance.now();
-+		var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
- 
- 		if(label && nowTime - this.lastUpdate > 250){
- 			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
-@@ -87,10 +117,34 @@
- 		}
- 	},
- 	start: function(){
--		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
-+		if(this.sync.isMine && this.startTimeRef){
-+			this.startTimeRef.set(Firebase.ServerValue.TIMESTAMP);
-+		}
- 	},
- 	stop: function(){
--		this.endTime = 0;
-+		if(this.sync.isMine && this.startTimeRef){
-+			this.startTimeRef.set(0);
-+		}
-+	},
-+	syncStart: function()
-+	{
-+		this.startTimeRef = this.sync.dataRef.child(this.name);
-+		this.startTimeRef.on('value', (function(snapshot)
-+		{
-+			var serverTime = snapshot.val();
-+
-+			if(serverTime > 0){
-+				this.localTimeOffset = Date.now() - serverTime;
-+				this.endTime = serverTime + Math.floor(this.data.duration * 1000);
-+			}
-+			else {
-+				this.endTime = 0;
-+			}
-+
-+		}).bind(this));
-+
-+		if(this.data.autostart)
-+			this.start();
- 	},
- 	running: function(){
- 		return this.endTime !== 0;
-@@ -98,10 +152,18 @@
- });
- 
- AFRAME.registerComponent('hud-question-id', {
--	dependencies: ['json', 'n-text'],
-+	dependencies: ['json', 'n-text', 'sync'],
- 	schema: {type: 'array'},
- 	init: function()
- 	{
-+		this.sync = this.el.components.sync;
-+		if(this.sync.isConnected){
-+			this.start();
-+		}
-+		else {
-+			this.el.addEventListener('connected', this.start.bind(this));
-+		}
-+
- 		this.el.addEventListener('timerend', (function(){
- 			this.el.setAttribute(this.name, []);
- 		}).bind(this));
-@@ -111,13 +173,30 @@
- 		var phrase = getDeepValue(this.el.json, this.data, '');
- 		if(this.data.length > 0 && phrase){
- 			this.el.setAttribute('n-text', 'text', phrase);
--			var target = document.querySelector('.hud[timer]');
--			if(!target.components.timer.running())
--				target.components.timer.start();
- 		}
- 		else {
- 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
- 		}
-+
-+		if(this.sync.isMine)
-+		{
-+			if(this.dataRef){
-+				this.dataRef.set(this.data);
-+			}
-+
-+			var target = document.querySelector('.mine[timer]');
-+			if(!target.components.timer.running())
-+				target.components.timer.start();
-+		}
-+	},
-+	start: function()
-+	{
-+		this.dataRef = this.sync.dataRef.child(this.name);
-+		this.dataRef.on('value', (function(snapshot){
-+			if(!this.sync.isMine || !this.data.length){
-+				this.el.setAttribute(this.name, snapshot.val());
-+			}
-+		}).bind(this));
- 	}
- });
- 
-@@ -136,7 +215,8 @@
- 			return acc + val;
- 		}
- 
--		this.target = document.querySelector('.hud[json][hud-question-id]');
-+		var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
-+		this.target = document.querySelector('[hud-question-id][data-creator-user-id="'+userId+'"]');
- 		var catString = this.el.sceneEl.dataset.categories;
- 		this.catPaths = parseCategories(catString);
- 
-diff -u checkpoint-3/index.html checkpoint-4/index.html
---- checkpoint-3/index.html	2017-03-24 13:19:57.733086400 -0700
-+++ checkpoint-4/index.html	2017-03-24 13:37:48.908721000 -0700
-@@ -8,6 +8,7 @@
- 	</head>
- 	<body>
- 		<a-scene altspace='fullspace: true' debug
-+			sync-system='app: headset-up; author: altspacevr'
- 			data-categories='catchphrase.easy; catchphrase.medium; catchphrase.hard'>
- 
- 			<a-assets>
-@@ -17,7 +18,8 @@
- 					position='0 0.15 0' rotation='0 180 0'
- 					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.1;'
- 					json='#dict' hud-question-id=''
--					n-skeleton-parent='part: eye'>
-+					n-skeleton-parent='part: eye'
-+					sync sync-n-skeleton-parent>
- 				</a-mixin>
- 
- 				<a-mixin id='head-timer'
-@@ -26,7 +28,7 @@
- 					timer='duration: 60'
- 					n-skeleton-parent='part: eye'
- 					sync sync-n-skeleton-parent
--					wire='on: timerend; emit: timerend; targets: [hud-question-id]'>
-+					wire='on: timerend; emit: timerend; targets: .mine[hud-question-id]'>
- 				</a-mixin>
- 
- 				<a-mixin id='ui-on-spine'
-@@ -61,24 +63,30 @@
- 
- 			</a-assets>
- 
--			<a-entity class='hud' mixin='head-text'></a-entity>
--			<a-entity class='hud' mixin='head-timer'></a-entity>
-+			<a-box wire='on: click; emit: attach-hud; targets: .hud'></a-box>
-+
-+			<a-entity class='hud'
-+				instantiator='mixin: head-text; on: attach-hud; group: text; remove-last: true'>
-+			</a-entity>
-+			<a-entity class='hud'
-+				instantiator='mixin: head-timer; on: attach-hud; group: timer; remove-last: true'>
-+			</a-entity>
- 
- 			<a-entity position='0 0 -0.7'>
- 				<a-entity class='hud bubble'
--					mixin='ui-on-spine bubble bottom-bubble'>
-+					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom-bubble'>
- 				</a-entity>
- 				<a-entity class='hud text'
--					mixin='ui-on-spine text bottom-text'>
-+					clone-on='on: attach-hud; mixins: ui-on-spine, text, bottom-text'>
- 				</a-entity>
- 			</a-entity>
- 
- 			<a-entity position='0 1 -0.7'>
- 				<a-entity class='hud bubble'
--					mixin='ui-on-spine bubble top-bubble'>
-+					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, top-bubble'>
- 				</a-entity>
- 				<a-entity class='hud text'
--					mixin='ui-on-spine text top-text'>
-+					clone-on='on: attach-hud; mixins: ui-on-spine, text, top-text'>
- 				</a-entity>
- 			</a-entity>
- 
+diff checkpoint-3/headset-up.js checkpoint-4/headset-up.js
+48a49,72
+> AFRAME.registerComponent('clone-on', {
+> 	schema: {
+> 		on: {type: 'string'},
+> 		mixins: {type: 'array', default: []}
+> 	},
+> 	init: function(){
+> 		var self = this;
+> 		this.el.addEventListener(this.data.on, function()
+> 		{
+> 			if(!self.clone){
+> 				self.clone = document.createElement('a-entity');
+> 				self.clone.setAttribute('class', self.el.className);
+> 				self.clone.classList.add('clone');
+> 				self.clone.setAttribute('mixin', self.data.mixins.join(' '));
+> 				self.el.parentNode.appendChild(self.clone);
+> 			}
+> 			else {
+> 				self.clone.parentElement.remove(self.clone);
+> 				self.clone = null;
+> 			}
+> 		});
+> 	}
+> });
+> 
+50a75
+> 	dependencies: ['sync'],
+67,68c92,98
+< 		if(this.data.autostart)
+< 			this.start();
+---
+> 		this.sync = this.el.components.sync;
+> 		if(this.sync.isConnected){
+> 			this.syncStart();
+> 		}
+> 		else {
+> 			this.el.addEventListener('connected', this.syncStart.bind(this));
+> 		}
+75c105
+< 		var nowTime = performance.now();
+---
+> 		var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
+90c120,122
+< 		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
+---
+> 		if(this.sync.isMine && this.startTimeRef){
+> 			this.startTimeRef.set(Firebase.ServerValue.TIMESTAMP);
+> 		}
+93c125,147
+< 		this.endTime = 0;
+---
+> 		if(this.sync.isMine && this.startTimeRef){
+> 			this.startTimeRef.set(0);
+> 		}
+> 	},
+> 	syncStart: function()
+> 	{
+> 		this.startTimeRef = this.sync.dataRef.child(this.name);
+> 		this.startTimeRef.on('value', (function(snapshot)
+> 		{
+> 			var serverTime = snapshot.val();
+> 
+> 			if(serverTime > 0){
+> 				this.localTimeOffset = Date.now() - serverTime;
+> 				this.endTime = serverTime + Math.floor(this.data.duration * 1000);
+> 			}
+> 			else {
+> 				this.endTime = 0;
+> 			}
+> 
+> 		}).bind(this));
+> 
+> 		if(this.data.autostart)
+> 			this.start();
+101c155
+< 	dependencies: ['json', 'n-text'],
+---
+> 	dependencies: ['json', 'n-text', 'sync'],
+104a159,166
+> 		this.sync = this.el.components.sync;
+> 		if(this.sync.isConnected){
+> 			this.start();
+> 		}
+> 		else {
+> 			this.el.addEventListener('connected', this.start.bind(this));
+> 		}
+> 
+114,116d175
+< 			var target = document.querySelector('.hud[timer]');
+< 			if(!target.components.timer.running())
+< 				target.components.timer.start();
+120a180,199
+> 
+> 		if(this.sync.isMine)
+> 		{
+> 			if(this.dataRef){
+> 				this.dataRef.set(this.data);
+> 			}
+> 
+> 			var target = document.querySelector('.mine[timer]');
+> 			if(!target.components.timer.running())
+> 				target.components.timer.start();
+> 		}
+> 	},
+> 	start: function()
+> 	{
+> 		this.dataRef = this.sync.dataRef.child(this.name);
+> 		this.dataRef.on('value', (function(snapshot){
+> 			if(!this.sync.isMine || !this.data.length){
+> 				this.el.setAttribute(this.name, snapshot.val());
+> 			}
+> 		}).bind(this));
+139c218,219
+< 		this.target = document.querySelector('.hud[json][display-phrase]');
+---
+> 		var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
+> 		this.target = document.querySelector('[display-phrase][data-creator-user-id="'+userId+'"]');
+diff checkpoint-3/index.html checkpoint-4/index.html
+10a11
+> 			sync-system='app: headset-up; author: altspacevr'
+20c21,22
+< 					n-skeleton-parent='part: eye'>
+---
+> 					n-skeleton-parent='part: eye'
+> 					sync sync-n-skeleton-parent>
+29c31
+< 					wire='on: timerend; emit: timerend; targets: [display-phrase]'>
+---
+> 					wire='on: timerend; emit: timerend; targets: .mine[display-phrase]'>
+64,65c66,73
+< 			<a-entity class='hud' mixin='head-text'></a-entity>
+< 			<a-entity class='hud' mixin='head-timer'></a-entity>
+---
+> 			<a-box wire='on: click; emit: attach-hud; targets: .hud'></a-box>
+> 
+> 			<a-entity class='hud'
+> 				instantiator='mixin: head-text; on: attach-hud; group: text; remove-last: true'>
+> 			</a-entity>
+> 			<a-entity class='hud'
+> 				instantiator='mixin: head-timer; on: attach-hud; group: timer; remove-last: true'>
+> 			</a-entity>
+69c77
+< 					mixin='ui-on-spine bubble bottom-bubble'>
+---
+> 					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, bottom-bubble'>
+72c80
+< 					mixin='ui-on-spine text bottom-text'>
+---
+> 					clone-on='on: attach-hud; mixins: ui-on-spine, text, bottom-text'>
+78c86
+< 					mixin='ui-on-spine bubble top-bubble'>
+---
+> 					clone-on='on: attach-hud; mixins: ui-on-spine, bubble, top-bubble'>
+81c89
+< 					mixin='ui-on-spine text top-text'>
+---
+> 					clone-on='on: attach-hud; mixins: ui-on-spine, text, top-text'>

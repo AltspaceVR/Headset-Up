@@ -32,7 +32,7 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-AFRAME.registerComponent('hud-question-id', {
+AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	update: function()

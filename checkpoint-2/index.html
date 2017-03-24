@@ -16,7 +16,7 @@
 				<a-mixin id='head-text'
 					position='0 0.15 0' rotation='0 180 0'
 					n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.1;'
-					json='#dict' hud-question-id=''
+					json='#dict' display-phrase=''
 					n-skeleton-parent='part: eye'>
 				</a-mixin>
 
@@ -29,7 +29,7 @@
 					geometry='primitive: sphere; radius: 0.5'
 					material='shader: flat; side: back'
 					scale='0.6 0.1 0.1'
-					hud-next-question>
+					advance-phrase>
 				</a-mixin>
 
 				<a-mixin id='text'

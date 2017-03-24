@@ -151,7 +151,7 @@ AFRAME.registerComponent('timer', {
 	}
 });
 
-AFRAME.registerComponent('hud-question-id', {
+AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text', 'sync'],
 	schema: {type: 'array'},
 	init: function()
@@ -200,7 +200,7 @@ AFRAME.registerComponent('hud-question-id', {
 	}
 });
 
-AFRAME.registerComponent('hud-next-question', {
+AFRAME.registerComponent('advance-phrase', {
 	schema: {
 		on: {type: 'string', default: 'click'}
 	},
@@ -216,7 +216,7 @@ AFRAME.registerComponent('hud-next-question', {
 		}
 
 		var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
-		this.target = document.querySelector('[hud-question-id][data-creator-user-id="'+userId+'"]');
+		this.target = document.querySelector('[display-phrase][data-creator-user-id="'+userId+'"]');
 		var catString = this.el.sceneEl.dataset.categories;
 		this.catPaths = parseCategories(catString);
 
@@ -256,6 +256,6 @@ AFRAME.registerComponent('hud-next-question', {
 		newQPath.push( newQTotalIndex - this.catOffsets[catIndex] );
 
 		// update the question id with the new name
-		this.target.setAttribute('hud-question-id', newQPath);
+		this.target.setAttribute('display-phrase', newQPath);
 	}
 });
