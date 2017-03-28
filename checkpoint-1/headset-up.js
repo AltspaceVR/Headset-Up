@@ -1,6 +1,6 @@
 'use strict';
 
-function getDeepValue(obj, pathArray, defaultValue)
+/*function getDeepValue(obj, pathArray, defaultValue)
 {
 	if(pathArray.length == 0)
 		return obj;
@@ -8,16 +8,9 @@ function getDeepValue(obj, pathArray, defaultValue)
 		return defaultValue;
 	else
 		return getDeepValue(obj[pathArray[0]], pathArray.slice(1), defaultValue);
-}
+}*/
 
-function parseCategories(cats)
-{
-	return cats.split(';').map(function(cat){
-		return cat.trim().split('.');
-	});
-}
-
-AFRAME.registerComponent('json', {
+/*AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
 	init: function(){
 		this.el.json = {};
@@ -30,9 +23,9 @@ AFRAME.registerComponent('json', {
 			console.error('Unable to parse', this.data);
 		}
 	}
-});
+});*/
 
-AFRAME.registerComponent('display-phrase', {
+/*AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	update: function()
@@ -45,4 +38,4 @@ AFRAME.registerComponent('display-phrase', {
 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
 		}
 	}
-});
+});*/

@@ -17,7 +17,7 @@ function parseCategories(cats)
 	});
 }
 
-function formatTime(ms)
+/*function formatTime(ms)
 {
 	if(ms <= 0)
 		return '00:00';
@@ -29,7 +29,7 @@ function formatTime(ms)
 	if(seconds < 10) seconds = '0'+seconds;
 
 	return minutes + ':' + seconds;
-}
+}*/
 
 AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
@@ -46,7 +46,7 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-AFRAME.registerComponent('timer', {
+/*AFRAME.registerComponent('timer', {
 	multiple: true,
 	schema: {
 		duration: {type: 'number', default: 30},
@@ -55,7 +55,7 @@ AFRAME.registerComponent('timer', {
 		label: {type: 'selector', default: null},
 		autostart: {type: 'boolean', default: false}
 	},
-	init: function()
+	/*init: function()
 	{
 		this.endTime = 0;
 		this.lastUpdate = 0;
@@ -67,7 +67,16 @@ AFRAME.registerComponent('timer', {
 		if(this.data.autostart)
 			this.start();
 	},
-	tick: function(time, deltaTime)
+	/*start: function(){
+		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
+	},
+	stop: function(){
+		this.endTime = 0;
+	},
+	running: function(){
+		return this.endTime !== 0;
+	},
+	/*tick: function(time, deltaTime)
 	{
 		if(!this.endTime) return;
 
@@ -85,17 +94,8 @@ AFRAME.registerComponent('timer', {
 			if(label)
 				label.setAttribute('n-text', 'text', '00:00');
 		}
-	},
-	start: function(){
-		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
-	},
-	stop: function(){
-		this.endTime = 0;
-	},
-	running: function(){
-		return this.endTime !== 0;
 	}
-});
+});*/
 
 AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
@@ -130,6 +130,9 @@ AFRAME.registerComponent('advance-phrase', {
 		this.advanceQuestion = this._advanceQuestion.bind(this);
 		this.el.addEventListener(this.data.on, this.advanceQuestion);
 	},
+	remove: function(){
+		this.el.removeEventListener(this.data.on, this.advanceQuestion);
+	},
 	initCategories: function()
 	{
 		function sum(acc, val){
@@ -153,9 +156,6 @@ AFRAME.registerComponent('advance-phrase', {
 
 		// the first item in the offsets list is always zero
 		this.catOffsets.unshift(0);
-	},
-	remove: function(){
-		this.el.removeEventListener(this.data.on, this.advanceQuestion);
 	},
 	_advanceQuestion: function()
 	{

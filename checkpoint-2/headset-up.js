@@ -10,12 +10,12 @@ function getDeepValue(obj, pathArray, defaultValue)
 		return getDeepValue(obj[pathArray[0]], pathArray.slice(1), defaultValue);
 }
 
-function parseCategories(cats)
+/*function parseCategories(cats)
 {
 	return cats.split(';').map(function(cat){
 		return cat.trim().split('.');
 	});
-}
+}*/
 
 AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
@@ -47,7 +47,7 @@ AFRAME.registerComponent('display-phrase', {
 	}
 });
 
-AFRAME.registerComponent('advance-phrase', {
+/*AFRAME.registerComponent('advance-phrase', {
 	schema: {
 		on: {type: 'string', default: 'click'}
 	},
@@ -56,7 +56,10 @@ AFRAME.registerComponent('advance-phrase', {
 		this.advanceQuestion = this._advanceQuestion.bind(this);
 		this.el.addEventListener(this.data.on, this.advanceQuestion);
 	},
-	initCategories: function()
+	remove: function(){
+		this.el.removeEventListener(this.data.on, this.advanceQuestion);
+	},
+	/*initCategories: function()
 	{
 		function sum(acc, val){
 			return acc + val;
@@ -80,10 +83,7 @@ AFRAME.registerComponent('advance-phrase', {
 		// the first item in the offsets list is always zero
 		this.catOffsets.unshift(0);
 	},
-	remove: function(){
-		this.el.removeEventListener(this.data.on, this.advanceQuestion);
-	},
-	_advanceQuestion: function()
+	/*_advanceQuestion: function()
 	{
 		if(!this.target || !this.catPaths || !this.catOffsets){
 			this.initCategories();
@@ -104,4 +104,4 @@ AFRAME.registerComponent('advance-phrase', {
 		// update the question id with the new name
 		this.target.setAttribute('display-phrase', newQPath);
 	}
-});
+});*/
