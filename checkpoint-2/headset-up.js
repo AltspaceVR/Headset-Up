@@ -18,16 +18,16 @@ function parseCategories(cats)
 }
 
 AFRAME.registerComponent('json', {
-	schema: {type: 'src'},
+	schema: {type: 'selector'},
 	init: function(){
 		this.el.json = {};
 	},
 	update: function(){
 		try {
-			this.el.json = JSON.parse(THREE.Cache.files[this.data]);
+			this.el.json = JSON.parse(this.data.data);
 		}
 		catch(e){
-			console.error('Unable to parse', this.data);
+			console.error('Unable to parse', this.data.data);
 		}
 	}
 });
