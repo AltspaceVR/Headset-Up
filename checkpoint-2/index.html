@@ -8,7 +8,6 @@
 </head>
 <body>
 <a-scene altspace='fullspace: true' debug
-	sync-system='app: headset-up; author: altspacevr'
 	data-categories='catchphrase.easy; catchphrase.medium; catchphrase.hard'>
 
 	<a-assets>
@@ -16,19 +15,9 @@
 
 		<a-mixin id='head-text'
 			position='0 0.15 0' rotation='0 180 0'
-			n-text='text: Ready to play?;
-				font-size: 1; width: 1; height: 0.1;'
+			n-text='text: Ready to play?; font-size: 1; width: 1; height: 0.1;'
 			json='#dict' display-phrase=''
-			n-skeleton-parent='part: eye'
-			sync sync-n-skeleton-parent></a-mixin>
-
-		<a-mixin id='head-timer'
-			position='0 0.25 0' rotation='0 180 0'
-			n-text='text: 1:00; font-size: 1; width: 1; height: 0.1'
-			timer='duration: 60'
-			n-skeleton-parent='part: eye'
-			wire='on: timerend; emit: timerend; targets: .mine[display-phrase]'
-			sync sync-n-skeleton-parent></a-mixin>
+			n-skeleton-parent='part: eye'></a-mixin>
 
 		<a-mixin id='ui-on-spine'
 			n-skeleton-parent='part: spine'
@@ -50,39 +39,27 @@
 
 		<a-mixin id='top-text'
 			n-text='text: <color=#bbbbbb>Skip'></a-mixin>
-		<a-mixin id='bottom-text'
-			n-text='text: Got it!'></a-mixin>
+		<a-mixin id='bottom-text' n-text='text: Got it!'></a-mixin>
 
 	</a-assets>
 
-	<a-box wire='on: click; emit: attach-hud; targets: .hud'></a-box>
-
-	<a-entity class='hud' instantiator='mixin:
-		head-text; on: attach-hud; remove-last: true'>
-	</a-entity>
-	<a-entity class='hud' instantiator='mixin:
-		head-timer; on: attach-hud; remove-last: true'>
-	</a-entity>
+	<a-entity class='hud' mixin='head-text'></a-entity>
 
 	<a-entity position='0 0 -0.7'>
 		<a-entity class='hud bubble'
-			clone-on='on: attach-hud;
-				mixins: ui-on-spine, bubble, bottom-bubble'>
+			mixin='ui-on-spine bubble bottom-bubble'>
 		</a-entity>
 		<a-entity class='hud text'
-			clone-on='on: attach-hud;
-				mixins: ui-on-spine, text, bottom-text'>
+			mixin='ui-on-spine text bottom-text'>
 		</a-entity>
 	</a-entity>
 
 	<a-entity position='0 1 -0.7'>
 		<a-entity class='hud bubble'
-			clone-on='on: attach-hud;
-				mixins: ui-on-spine, bubble, top-bubble'>
+			mixin='ui-on-spine bubble top-bubble'>
 		</a-entity>
 		<a-entity class='hud text'
-			clone-on='on: attach-hud;
-				mixins: ui-on-spine, text, top-text'>
+			mixin='ui-on-spine text top-text'>
 		</a-entity>
 	</a-entity>
 

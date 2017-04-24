@@ -46,33 +46,8 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-AFRAME.registerComponent('clone-on', {
-	schema: {
-		on: {type: 'string'},
-		mixins: {type: 'array', default: []}
-	},
-	init: function(){
-		var self = this;
-		this.el.addEventListener(this.data.on, function()
-		{
-			if(!self.clone){
-				self.clone = document.createElement('a-entity');
-				self.clone.setAttribute('class', self.el.className);
-				self.clone.classList.add('clone');
-				self.clone.setAttribute('mixin', self.data.mixins.join(' '));
-				self.el.parentNode.appendChild(self.clone);
-			}
-			else {
-				self.clone.parentElement.remove(self.clone);
-				self.clone = null;
-			}
-		});
-	}
-});
-
 AFRAME.registerComponent('timer', {
 	multiple: true,
-	dependencies: ['sync'],
 	schema: {
 		duration: {type: 'number', default: 30},
 		on: {type: 'string', default: null},
@@ -89,53 +64,24 @@ AFRAME.registerComponent('timer', {
 			this.el.addEventListener(this.data.on, this.start.bind(this));
 		}
 
-		this.sync = this.el.components.sync;
-		if(this.sync.isConnected){
-			this.syncStart();
-		}
-		else {
-			this.el.addEventListener('connected', this.syncStart.bind(this));
-		}
+		if(this.data.autostart)
+			this.start();
 	},
 	start: function(){
-		if(this.sync.isMine && this.startTimeRef){
-			this.startTimeRef.set(Firebase.ServerValue.TIMESTAMP);
-		}
+		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
 	},
 	stop: function(){
-		if(this.sync.isMine && this.startTimeRef){
-			this.startTimeRef.set(0);
-		}
+		this.endTime = 0;
 	},
 	running: function(){
 		return this.endTime !== 0;
-	},
-	syncStart: function()
-	{
-		this.startTimeRef = this.sync.dataRef.child(this.name);
-		this.startTimeRef.on('value', (function(snapshot)
-		{
-			var serverTime = snapshot.val();
-
-			if(serverTime > 0){
-				this.localTimeOffset = Date.now() - serverTime;
-				this.endTime = serverTime + Math.floor(this.data.duration * 1000);
-			}
-			else {
-				this.endTime = 0;
-			}
-
-		}).bind(this));
-
-		if(this.data.autostart)
-			this.start();
 	},
 	tick: function(time, deltaTime)
 	{
 		if(!this.endTime) return;
 
 		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
-		var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
+		var nowTime = performance.now();
 
 		if(label && nowTime - this.lastUpdate > 250){
 			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
@@ -152,18 +98,10 @@ AFRAME.registerComponent('timer', {
 });
 
 AFRAME.registerComponent('display-phrase', {
-	dependencies: ['json', 'n-text', 'sync'],
+	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	init: function()
 	{
-		this.sync = this.el.components.sync;
-		if(this.sync.isConnected){
-			this.start();
-		}
-		else {
-			this.el.addEventListener('connected', this.start.bind(this));
-		}
-
 		this.el.addEventListener('timerend', (function(){
 			this.el.setAttribute(this.name, []);
 		}).bind(this));
@@ -173,30 +111,13 @@ AFRAME.registerComponent('display-phrase', {
 		var phrase = getDeepValue(this.el.json, this.data, '');
 		if(this.data.length > 0 && phrase){
 			this.el.setAttribute('n-text', 'text', phrase);
+			var target = document.querySelector('.hud[timer]');
+			if(!target.components.timer.running())
+				target.components.timer.start();
 		}
 		else {
 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
 		}
-
-		if(this.sync.isMine)
-		{
-			if(this.dataRef){
-				this.dataRef.set(this.data);
-			}
-
-			var target = document.querySelector('.mine[timer]');
-			if(!target.components.timer.running())
-				target.components.timer.start();
-		}
-	},
-	start: function()
-	{
-		this.dataRef = this.sync.dataRef.child(this.name);
-		this.dataRef.on('value', (function(snapshot){
-			if(!this.sync.isMine || !this.data.length){
-				this.el.setAttribute(this.name, snapshot.val());
-			}
-		}).bind(this));
 	}
 });
 
@@ -209,14 +130,16 @@ AFRAME.registerComponent('advance-phrase', {
 		this.advanceQuestion = this._advanceQuestion.bind(this);
 		this.el.addEventListener(this.data.on, this.advanceQuestion);
 	},
+	remove: function(){
+		this.el.removeEventListener(this.data.on, this.advanceQuestion);
+	},
 	initCategories: function()
 	{
 		function sum(acc, val){
 			return acc + val;
 		}
 
-		var userId = this.el.sceneEl.systems['sync-system'].userInfo.userId;
-		this.target = document.querySelector('[display-phrase][data-creator-user-id="'+userId+'"]');
+		this.target = document.querySelector('.hud[json][display-phrase]');
 		var catString = this.el.sceneEl.dataset.categories;
 		this.catPaths = parseCategories(catString);
 
@@ -233,9 +156,6 @@ AFRAME.registerComponent('advance-phrase', {
 
 		// the first item in the offsets list is always zero
 		this.catOffsets.unshift(0);
-	},
-	remove: function(){
-		this.el.removeEventListener(this.data.on, this.advanceQuestion);
 	},
 	_advanceQuestion: function()
 	{
