@@ -46,7 +46,7 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-AFRAME.registerComponent('clone-on', {
+/*AFRAME.registerComponent('clone-on', {
 	schema: {
 		on: {type: 'string'},
 		mixins: {type: 'array', default: []}
@@ -68,7 +68,7 @@ AFRAME.registerComponent('clone-on', {
 			}
 		});
 	}
-});
+});*/
 
 AFRAME.registerComponent('timer', {
 	multiple: true,
@@ -89,44 +89,28 @@ AFRAME.registerComponent('timer', {
 			this.el.addEventListener(this.data.on, this.start.bind(this));
 		}
 
-		this.sync = this.el.components.sync;
+		/*this.sync = this.el.components.sync;
 		if(this.sync.isConnected){
 			this.syncStart();
 		}
 		else {
 			this.el.addEventListener('connected', this.syncStart.bind(this));
-		}
-	},
-	tick: function(time, deltaTime)
-	{
-		if(!this.endTime) return;
-
-		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
-		var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
-
-		if(label && nowTime - this.lastUpdate > 250){
-			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
-			this.lastUpdate = nowTime;
-		}
-
-		if(this.endTime > 0 && nowTime > this.endTime){
-			this.el.emit(this.data.emit);
-			this.stop();
-			if(label)
-				label.setAttribute('n-text', 'text', '00:00');
-		}
+		}*/
 	},
 	start: function(){
-		if(this.sync.isMine && this.startTimeRef){
+		/*if(this.sync.isMine && this.startTimeRef){
 			this.startTimeRef.set(Firebase.ServerValue.TIMESTAMP);
-		}
+		}*/
 	},
 	stop: function(){
-		if(this.sync.isMine && this.startTimeRef){
+		/*if(this.sync.isMine && this.startTimeRef){
 			this.startTimeRef.set(0);
-		}
+		}*/
 	},
-	syncStart: function()
+	running: function(){
+		return this.endTime !== 0;
+	},
+	/*syncStart: function()
 	{
 		this.startTimeRef = this.sync.dataRef.child(this.name);
 		this.startTimeRef.on('value', (function(snapshot)
@@ -145,16 +129,32 @@ AFRAME.registerComponent('timer', {
 
 		if(this.data.autostart)
 			this.start();
-	},
-	running: function(){
-		return this.endTime !== 0;
+	},*/
+	tick: function(time, deltaTime)
+	{
+		if(!this.endTime) return;
+
+		var label = this.el.hasAttribute('n-text') ? this.el : this.data.label;
+		//var nowTime = performance.timing.navigationStart + performance.now() - this.localTimeOffset;
+
+		if(label && nowTime - this.lastUpdate > 250){
+			label.setAttribute('n-text', 'text', formatTime(this.endTime - nowTime));
+			this.lastUpdate = nowTime;
+		}
+
+		if(this.endTime > 0 && nowTime > this.endTime){
+			this.el.emit(this.data.emit);
+			this.stop();
+			if(label)
+				label.setAttribute('n-text', 'text', '00:00');
+		}
 	}
 });
 
 AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text', 'sync'],
 	schema: {type: 'array'},
-	init: function()
+	/*init: function()
 	{
 		this.sync = this.el.components.sync;
 		if(this.sync.isConnected){
@@ -167,7 +167,7 @@ AFRAME.registerComponent('display-phrase', {
 		this.el.addEventListener('timerend', (function(){
 			this.el.setAttribute(this.name, []);
 		}).bind(this));
-	},
+	},*/
 	update: function()
 	{
 		var phrase = getDeepValue(this.el.json, this.data, '');
@@ -178,7 +178,7 @@ AFRAME.registerComponent('display-phrase', {
 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
 		}
 
-		if(this.sync.isMine)
+		/*if(this.sync.isMine)
 		{
 			if(this.dataRef){
 				this.dataRef.set(this.data);
@@ -187,9 +187,9 @@ AFRAME.registerComponent('display-phrase', {
 			var target = document.querySelector('.mine[timer]');
 			if(!target.components.timer.running())
 				target.components.timer.start();
-		}
+		}*/
 	},
-	start: function()
+	/*start: function()
 	{
 		this.dataRef = this.sync.dataRef.child(this.name);
 		this.dataRef.on('value', (function(snapshot){
@@ -197,7 +197,7 @@ AFRAME.registerComponent('display-phrase', {
 				this.el.setAttribute(this.name, snapshot.val());
 			}
 		}).bind(this));
-	}
+	}*/
 });
 
 AFRAME.registerComponent('advance-phrase', {
