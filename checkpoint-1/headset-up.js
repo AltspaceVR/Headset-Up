@@ -1,6 +1,6 @@
 'use strict';
 
-/*function getDeepValue(obj, pathArray, defaultValue)
+function getDeepValue(obj, pathArray, defaultValue)
 {
 	if(pathArray.length == 0)
 		return obj;
@@ -8,9 +8,9 @@
 		return defaultValue;
 	else
 		return getDeepValue(obj[pathArray[0]], pathArray.slice(1), defaultValue);
-}*/
+}
 
-/*AFRAME.registerComponent('json', {
+AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
 	init: function(){
 		this.el.json = {};
@@ -23,9 +23,9 @@
 			console.error('Unable to parse', this.data);
 		}
 	}
-});*/
+});
 
-/*AFRAME.registerComponent('display-phrase', {
+AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
 	schema: {type: 'array'},
 	update: function()
@@ -38,4 +38,4 @@
 			this.el.setAttribute('n-text', 'text', 'Ready to play?');
 		}
 	}
-});*/
+});

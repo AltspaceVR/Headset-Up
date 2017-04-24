@@ -17,7 +17,7 @@ function parseCategories(cats)
 	});
 }
 
-/*function formatTime(ms)
+function formatTime(ms)
 {
 	if(ms <= 0)
 		return '00:00';
@@ -29,7 +29,7 @@ function parseCategories(cats)
 	if(seconds < 10) seconds = '0'+seconds;
 
 	return minutes + ':' + seconds;
-}*/
+}
 
 AFRAME.registerComponent('json', {
 	schema: {type: 'src'},
@@ -46,7 +46,7 @@ AFRAME.registerComponent('json', {
 	}
 });
 
-/*AFRAME.registerComponent('timer', {
+AFRAME.registerComponent('timer', {
 	multiple: true,
 	schema: {
 		duration: {type: 'number', default: 30},
@@ -55,7 +55,7 @@ AFRAME.registerComponent('json', {
 		label: {type: 'selector', default: null},
 		autostart: {type: 'boolean', default: false}
 	},
-	/*init: function()
+	init: function()
 	{
 		this.endTime = 0;
 		this.lastUpdate = 0;
@@ -67,7 +67,7 @@ AFRAME.registerComponent('json', {
 		if(this.data.autostart)
 			this.start();
 	},
-	/*start: function(){
+	start: function(){
 		this.endTime = performance.now() + Math.floor(this.data.duration * 1000);
 	},
 	stop: function(){
@@ -76,7 +76,7 @@ AFRAME.registerComponent('json', {
 	running: function(){
 		return this.endTime !== 0;
 	},
-	/*tick: function(time, deltaTime)
+	tick: function(time, deltaTime)
 	{
 		if(!this.endTime) return;
 
@@ -95,7 +95,7 @@ AFRAME.registerComponent('json', {
 				label.setAttribute('n-text', 'text', '00:00');
 		}
 	}
-});*/
+});
 
 AFRAME.registerComponent('display-phrase', {
 	dependencies: ['json', 'n-text'],
